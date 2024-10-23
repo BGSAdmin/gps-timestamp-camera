@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Timestamp Camera & Video</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        video {
+            width: 600px;
+            height: auto;
+            border: 2px solid black;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: space-around;
+            width: 600px;
+            margin-top: 10px;
+        }
+
+        .info {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        #zoom-range {
+            width: 150px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #result img, #result video {
+            width: 600px;
+            margin-top: 10px;
+            max-width: 100%;
+        }
+
+        .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            color: black;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+            text-align: left;
+            border-top: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info">
+        <label>Product Name: <input type="text" id="product-name" placeholder="Enter Product Name"></label>
+        <label>Farmer Name: <input type="text" id="farmer-name" placeholder="Enter Farmer Name"></label>
+        <label>Upload Logo: <input type="file" id="logo-upload" accept="image/*"></label>
+    </div>
+
+    <div style="position: relative;">
+        <video id="video" autoplay playsinline muted></video> 
+        <div class="overlay" id="overlay"></div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <div id="controls">
+        <button id="take-photo">Capture Image</button>
+        <button id="start-record">Start Recording</button>
+        <button id="stop-record" style="display:none;">Stop Recording</button>
+        <button id="pause-record" style="display:none;">Pause Recording</button>
+        <input type="range" id="zoom-range" min="1" max="3" step="0.1" value="1">
+
+    <div id="result"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
