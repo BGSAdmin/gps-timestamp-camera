@@ -29,10 +29,25 @@ logoInput.addEventListener('change', function (event) {
 });
 
 async function startCamera() {
+    let constraints = {
+        video: {
+            facingMode: 'user', 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 }
+        },
+        audio: true
+    };
+
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (isMobile) {
+        constraints.video.facingMode = { ideal: 'environment' };
+    }
+
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
-        video.muted = false; 
+        video.muted = false;
 
         canvasStream = overlayCanvas.captureStream(30);  
         mediaRecorder = new MediaRecorder(canvasStream);
@@ -46,8 +61,17 @@ async function startCamera() {
         mediaRecorder.onstop = saveVideo;
     } catch (err) {
         console.error("Error accessing the camera: ", err);
+
+        try {
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            video.srcObject = fallbackStream;
+        } catch (fallbackErr) {
+            console.error("Error accessing camera with fallback: ", fallbackErr);
+        }
     }
 }
+
+
 
 function downloadData(url, fileName) {
     const a = document.createElement('a');
@@ -57,13 +81,13 @@ function downloadData(url, fileName) {
 }
 
 function saveVideo() {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const blob = new Blob(recordedChunks, { type: 'video/mp4' }); 
     const url = URL.createObjectURL(blob);
     const videoElement = document.createElement('video');
     videoElement.controls = true;
     videoElement.src = url;
     document.getElementById('result').appendChild(videoElement);
-    downloadData(url, 'video_recording.webm'); 
+    downloadData(url, 'video_recording.mp4'); 
     recordedChunks = [];
 }
 
@@ -96,7 +120,7 @@ takePhotoButton.addEventListener('click', async function () {
     img.src = dataUrl;
     document.getElementById('result').appendChild(img);
 
-    downloadData(dataUrl, 'captured_image.png'); // Automatically download the image
+    downloadData(dataUrl, 'captured_image.png'); 
 });
 
 startRecordButton.addEventListener('click', async function () {
@@ -110,11 +134,13 @@ startRecordButton.addEventListener('click', async function () {
     stopRecordButton.style.display = 'inline';
     pauseRecordButton.style.display = 'inline';
 
+    let position = await getLocation(); 
+    const timestamp = new Date().toLocaleString();
+
     function drawOverlay() {
         if (!isRecording) return;
 
         context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-        
         context.drawImage(video, 0, 0, overlayCanvas.width, overlayCanvas.height);
 
         const productName = productNameInput.value || "Product Name";
@@ -122,10 +148,6 @@ startRecordButton.addEventListener('click', async function () {
 
         context.font = '20px Arial';
         context.fillStyle = 'white';
-        const position = {
-            coords: { latitude: 12.9716, longitude: 77.5946 }  
-        };
-        const timestamp = new Date().toLocaleString();
         context.fillText(`Product: ${productName}`, 10, 30);
         context.fillText(`Farmer: ${farmerName}`, 10, 60);
         context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
@@ -139,7 +161,12 @@ startRecordButton.addEventListener('click', async function () {
 
         requestAnimationFrame(drawOverlay);
     }
+    
     drawOverlay();
+
+    setInterval(async () => {
+        position = await getLocation();
+    }, 5000); 
 });
 
 stopRecordButton.addEventListener('click', function () {
