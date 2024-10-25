@@ -1,3 +1,4 @@
+const openCameraButton = document.getElementById('open-camera');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const overlay = document.getElementById('overlay');
@@ -28,35 +29,29 @@ logoInput.addEventListener('change', function (event) {
     }
 });
 
+openCameraButton.addEventListener('click', startCamera);
 
 async function startCamera() {
     try {
-        // Get both video and audio streams
         const stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: {
-                echoCancellation: true,  // Optional, to improve audio quality
-                noiseSuppression: true,  // Optional, to reduce background noise
-                sampleRate: 44100        // Optional, set sample rate for clear audio
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 44100
             }
         });
 
-        // Set the stream to the video element and mute it
         video.srcObject = stream;
-        video.muted = true;  // Mute the sound so it's not heard during recording
+        video.muted = true;
+        canvasStream = overlayCanvas.captureStream(30);
 
-        // Capture the canvas video stream
-        canvasStream = overlayCanvas.captureStream(30);  
-
-        // Combine video from the canvas and audio from the stream
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
-            ...stream.getAudioTracks()  // Include audio in the recorded video
+            ...stream.getAudioTracks()
         ]);
 
-        // Set the mimeType for better audio and video quality
         mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
-
         mediaRecorder.ondataavailable = function (event) {
             if (event.data.size > 0) {
                 recordedChunks.push(event.data);
@@ -65,11 +60,13 @@ async function startCamera() {
 
         mediaRecorder.onstop = saveVideo;
 
+        openCameraButton.style.display = 'none';
+        startRecordButton.style.display = 'inline';
+
     } catch (err) {
         console.error("Error accessing the camera: ", err);
     }
 }
-
 
 function downloadData(url, fileName) {
     const a = document.createElement('a');
@@ -85,7 +82,7 @@ function saveVideo() {
     videoElement.controls = true;
     videoElement.src = url;
     document.getElementById('result').appendChild(videoElement);
-    downloadData(url, 'video_recording.webm'); 
+    downloadData(url, 'video_recording.webm');
     recordedChunks = [];
 }
 
@@ -118,7 +115,7 @@ takePhotoButton.addEventListener('click', async function () {
     img.src = dataUrl;
     document.getElementById('result').appendChild(img);
 
-    downloadData(dataUrl, 'captured_image.png'); // Automatically download the image
+    downloadData(dataUrl, 'captured_image.png');
 });
 
 startRecordButton.addEventListener('click', async function () {
@@ -145,7 +142,7 @@ startRecordButton.addEventListener('click', async function () {
         context.font = '20px Arial';
         context.fillStyle = 'white';
         const position = {
-            coords: { latitude: 12.9716, longitude: 77.5946 }  
+            coords: { latitude: 12.9716, longitude: 77.5946 }
         };
         const timestamp = new Date().toLocaleString();
         context.fillText(`Product: ${productName}`, 10, 30);
@@ -185,7 +182,7 @@ pauseRecordButton.addEventListener('click', function () {
 zoomRange.addEventListener('input', function () {
     const zoom = zoomRange.value;
     video.style.transform = `scale(${zoom})`;
-    video.style.transformOrigin = 'center center';  
+    video.style.transformOrigin = 'center center';
 });
 
 function getLocation() {
@@ -197,5 +194,3 @@ function getLocation() {
         }
     });
 }
-
-window.onload = startCamera;
