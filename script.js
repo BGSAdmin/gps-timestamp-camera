@@ -31,7 +31,11 @@ logoInput.addEventListener('change', function (event) {
 
 openCameraButton.addEventListener('click', async function() {
     await startCamera();
+    takePhotoButton.style.display = 'inline';
+    startRecordButton.style.display = 'inline';
+    zoomRange.style.display = 'inline';
 });
+
 
 async function startCamera() {
     try {
