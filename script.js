@@ -28,29 +28,34 @@ logoInput.addEventListener('change', function (event) {
     }
 });
 
+
 async function startCamera() {
-    let constraints = {
-        video: {
-            facingMode: 'user', 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 }
-        },
-        audio: true
-    };
-
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if (isMobile) {
-        constraints.video.facingMode = { ideal: 'environment' };
-    }
-
     try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        video.muted = false;
+        // Get both video and audio streams
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: {
+                echoCancellation: true,  // Optional, to improve audio quality
+                noiseSuppression: true,  // Optional, to reduce background noise
+                sampleRate: 44100        // Optional, set sample rate for clear audio
+            }
+        });
 
+        // Set the stream to the video element and mute it
+        video.srcObject = stream;
+        video.muted = true;  // Mute the sound so it's not heard during recording
+
+        // Capture the canvas video stream
         canvasStream = overlayCanvas.captureStream(30);  
-        mediaRecorder = new MediaRecorder(canvasStream);
+
+        // Combine video from the canvas and audio from the stream
+        const combinedStream = new MediaStream([
+            ...canvasStream.getVideoTracks(),
+            ...stream.getAudioTracks()  // Include audio in the recorded video
+        ]);
+
+        // Set the mimeType for better audio and video quality
+        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
 
         mediaRecorder.ondataavailable = function (event) {
             if (event.data.size > 0) {
@@ -59,18 +64,11 @@ async function startCamera() {
         };
 
         mediaRecorder.onstop = saveVideo;
+
     } catch (err) {
         console.error("Error accessing the camera: ", err);
-
-        try {
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            video.srcObject = fallbackStream;
-        } catch (fallbackErr) {
-            console.error("Error accessing camera with fallback: ", fallbackErr);
-        }
     }
 }
-
 
 
 function downloadData(url, fileName) {
@@ -81,13 +79,13 @@ function downloadData(url, fileName) {
 }
 
 function saveVideo() {
-    const blob = new Blob(recordedChunks, { type: 'video/mp4' }); 
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
     const videoElement = document.createElement('video');
     videoElement.controls = true;
     videoElement.src = url;
     document.getElementById('result').appendChild(videoElement);
-    downloadData(url, 'video_recording.mp4'); 
+    downloadData(url, 'video_recording.webm'); 
     recordedChunks = [];
 }
 
@@ -120,7 +118,7 @@ takePhotoButton.addEventListener('click', async function () {
     img.src = dataUrl;
     document.getElementById('result').appendChild(img);
 
-    downloadData(dataUrl, 'captured_image.png'); 
+    downloadData(dataUrl, 'captured_image.png'); // Automatically download the image
 });
 
 startRecordButton.addEventListener('click', async function () {
@@ -134,13 +132,11 @@ startRecordButton.addEventListener('click', async function () {
     stopRecordButton.style.display = 'inline';
     pauseRecordButton.style.display = 'inline';
 
-    let position = await getLocation(); 
-    const timestamp = new Date().toLocaleString();
-
     function drawOverlay() {
         if (!isRecording) return;
 
         context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        
         context.drawImage(video, 0, 0, overlayCanvas.width, overlayCanvas.height);
 
         const productName = productNameInput.value || "Product Name";
@@ -148,6 +144,10 @@ startRecordButton.addEventListener('click', async function () {
 
         context.font = '20px Arial';
         context.fillStyle = 'white';
+        const position = {
+            coords: { latitude: 12.9716, longitude: 77.5946 }  
+        };
+        const timestamp = new Date().toLocaleString();
         context.fillText(`Product: ${productName}`, 10, 30);
         context.fillText(`Farmer: ${farmerName}`, 10, 60);
         context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
@@ -161,12 +161,7 @@ startRecordButton.addEventListener('click', async function () {
 
         requestAnimationFrame(drawOverlay);
     }
-    
     drawOverlay();
-
-    setInterval(async () => {
-        position = await getLocation();
-    }, 5000); 
 });
 
 stopRecordButton.addEventListener('click', function () {
