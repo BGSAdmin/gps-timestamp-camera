@@ -30,20 +30,20 @@ logoInput.addEventListener('change', function (event) {
 });
 
 openCameraButton.addEventListener('click', async function() {
+    console.log("Open Camera button clicked"); // Add this line to check if it's responding
     await startCamera();
-    takePhotoButton.style.display = 'inline';
-    startRecordButton.style.display = 'inline';
-    zoomRange.style.display = 'inline';
+    takePhotoButton.style.display = 'inline-block';
+    startRecordButton.style.display = 'inline-block';
+    zoomRange.style.display = 'inline-block';
+
 });
+
 
 
 async function startCamera() {
     try {
-        // Use rear camera
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: { exact: 'environment' } // Specifies the rear camera
-            },
+            video: { facingMode: 'environment' }, // This is less strict and more likely to work
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
@@ -52,9 +52,9 @@ async function startCamera() {
         });
 
         video.srcObject = stream;
-        video.muted = true; // Mute sound during recording
+        video.muted = true;
 
-        // Capture the canvas video stream and combine it with audio
+        // Additional setup for mediaRecorder
         canvasStream = overlayCanvas.captureStream(30);
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
@@ -63,7 +63,7 @@ async function startCamera() {
 
         mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
 
-        mediaRecorder.ondataavailable = function (event) {
+        mediaRecorder.ondataavailable = function(event) {
             if (event.data.size > 0) {
                 recordedChunks.push(event.data);
             }
@@ -75,6 +75,7 @@ async function startCamera() {
         console.error("Error accessing the camera: ", err);
     }
 }
+
 function downloadData(url, fileName) {
     const a = document.createElement('a');
     a.href = url;
