@@ -29,12 +29,17 @@ logoInput.addEventListener('change', function (event) {
     }
 });
 
-openCameraButton.addEventListener('click', startCamera);
+openCameraButton.addEventListener('click', async function() {
+    await startCamera();
+});
 
 async function startCamera() {
     try {
+        // Use rear camera
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: {
+                facingMode: { exact: 'environment' } // Specifies the rear camera
+            },
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
@@ -43,15 +48,17 @@ async function startCamera() {
         });
 
         video.srcObject = stream;
-        video.muted = true;
-        canvasStream = overlayCanvas.captureStream(30);
+        video.muted = true; // Mute sound during recording
 
+        // Capture the canvas video stream and combine it with audio
+        canvasStream = overlayCanvas.captureStream(30);
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...stream.getAudioTracks()
         ]);
 
         mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
+
         mediaRecorder.ondataavailable = function (event) {
             if (event.data.size > 0) {
                 recordedChunks.push(event.data);
@@ -60,14 +67,10 @@ async function startCamera() {
 
         mediaRecorder.onstop = saveVideo;
 
-        openCameraButton.style.display = 'none';
-        startRecordButton.style.display = 'inline';
-
     } catch (err) {
         console.error("Error accessing the camera: ", err);
     }
 }
-
 function downloadData(url, fileName) {
     const a = document.createElement('a');
     a.href = url;
