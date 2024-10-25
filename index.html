@@ -67,6 +67,17 @@
             text-align: left;
             border-top: 1px solid black;
         }
+        #open-camera {
+            display: inline-block; /* Ensure it's displayed */
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50; /* Green background for visibility */
+            color: white;
+            border: none;
+            margin: 5px;
+}
+
     </style>
 </head>
 <body>
@@ -83,13 +94,14 @@
     </div>
     <canvas id="canvas"></canvas>
 
-    <div id="controls">
-        <button id="open-camera">Open Camera</button>
-        <button id="take-photo" >Capture Image</button>
-        <button id="start-record" >Start Recording</button>
-        <button id="stop-record" >Stop Recording</button>
-        <button id="pause-record" >Pause Recording</button>
-        <input type="range" id="zoom-range" min="1" max="3" step="0.1" value="1">
+   <div id="controls">
+    <button id="open-camera">Open Camera</button>
+    <button id="take-photo">Capture Image</button>
+    <button id="start-record">Start Recording</button>
+    <button id="stop-record" style="display:none;">Stop Recording</button>
+    <button id="pause-record" style="display:none;">Pause Recording</button>
+    <input type="range" id="zoom-range" min="1" max="3" step="0.1" value="1">
+
 
     <div id="result"></div>
 
