@@ -13,7 +13,7 @@
             align-items: center;
             justify-content: flex-start;
             margin: 0;
-            padding-top: 80px; /* Space for fixed header */
+            padding-top: 80px;
             background-color: #f0f0f0;
         }
 
@@ -63,31 +63,6 @@
             width: 150px;
         }
 
-        /* Mobile-Specific Adjustments */
-        @media (max-width: 768px) {
-            body {
-                padding-top: 100px; /* More space for fixed header on smaller screens */
-            }
-
-            .info {
-                font-size: 16px;
-            }
-
-            video, #result img, #result video {
-                width: 90%;
-            }
-
-            button {
-                width: 100%;
-                max-width: 120px;
-                font-size: 14px;
-            }
-
-            #zoom-range {
-                width: 100px;
-            }
-        }
-
         /* Result Images & Video */
         #result img, #result video {
             width: 100%;
@@ -97,8 +72,6 @@
     </style>
 </head>
 <body>
-
-
     <div class="info">
         <label>Product: <input type="text" id="product-name" placeholder="Enter Product Name"></label>
         <label>Name: <input type="text" id="farmer-name" placeholder="Enter Farmer Name"></label>
@@ -107,7 +80,7 @@
 
     <div style="position: relative;">
         <video id="video" autoplay playsinline muted></video> 
-        <div class="overlay" id="overlay"></div>
+        <canvas id="overlay"></canvas>
     </div>
     <canvas id="canvas"></canvas>
 
