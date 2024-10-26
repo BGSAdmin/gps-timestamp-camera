@@ -97,35 +97,43 @@ function saveVideo() {
 
 takePhotoButton.addEventListener('click', async function () {
     const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const zoom = parseFloat(zoomRange.value); // Get current zoom level
+
+    canvas.width = video.videoWidth * zoom;
+    canvas.height = video.videoHeight * zoom;
+
+    // Scale and draw the video on the canvas according to the zoom level
+    context.scale(zoom, zoom);
+    context.drawImage(video, 0, 0);
 
     const productName = productNameInput.value || "Product";
     const farmerName = farmerNameInput.value || "Name";
     const position = await getLocation();
     const timestamp = new Date().toLocaleString();
 
-    // Draw each footer line separately
-    context.font = '16px Arial';  // Font size for footer
+    // Draw text in the footer area with updated position based on zoom
+    context.font = '16px Arial';
     context.fillStyle = 'white';
     context.textAlign = 'left';
-    context.fillText(`Product: ${productName}`, 10, canvas.height - 70);
-    context.fillText(`Name: ${farmerName}`, 10, canvas.height - 50);
-    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, canvas.height - 30);
-    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 10); // Timestamp at the bottom
+    context.fillText(`Product: ${productName}`, 10 / zoom, canvas.height - 90 / zoom);
+    context.fillText(`Name: ${farmerName}`, 10 / zoom, canvas.height - 70 / zoom);
+    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10 / zoom, canvas.height - 50 / zoom);
+    context.fillText(`Timestamp: ${timestamp}`, 10 / zoom, canvas.height - 30 / zoom);
 
-    // Draw the logo at the top-left corner with smaller caption
-    const logoWidth = 50;  // Logo width
-    const logoHeight = 50;  // Logo height
-    const logoX = 10;
-    const logoY = 10;
-    context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
+    // Draw the uploaded logo or fixed logo in the footer
+    const footerLogoWidth = 60 / zoom;
+    const footerLogoHeight = 30 / zoom;
+    const footerLogoX = 10 / zoom;
+    const footerLogoY = canvas.height - 120 / zoom;
 
-    // Draw caption "VHUMI.IN" under the logo
-    context.font = '10px Arial';  // Smaller font for caption
-    context.textAlign = 'center';
-    context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
+    if (logoImage && logoImage.complete) {
+        context.drawImage(logoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+    } else {
+        context.drawImage(fixedLogoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+    }
+
+    // Reset the canvas scaling to avoid affecting further draws
+    context.setTransform(1, 0, 0, 1, 0, 0);
 
     const dataUrl = canvas.toDataURL('image/png');
     const img = document.createElement('img');
@@ -135,53 +143,6 @@ takePhotoButton.addEventListener('click', async function () {
     downloadData(dataUrl, 'captured_image.png');
 });
 
-startRecordButton.addEventListener('click', async function () {
-    const context = overlayCanvas.getContext('2d');
-    overlayCanvas.width = video.videoWidth;
-    overlayCanvas.height = video.videoHeight;
-
-    mediaRecorder.start();
-    isRecording = true;
-    startRecordButton.style.display = 'none';
-    stopRecordButton.style.display = 'inline';
-    pauseRecordButton.style.display = 'inline';
-
-    async function drawOverlay() {
-        if (!isRecording) return;
-
-        context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-        context.drawImage(video, 0, 0, overlayCanvas.width, overlayCanvas.height);
-
-        const productName = productNameInput.value || "Product";
-        const farmerName = farmerNameInput.value || "Name";
-        const position = await getLocation();
-        const timestamp = new Date().toLocaleString();
-
-        // Draw each footer line separately
-        context.font = '16px Arial';  // Font size for footer
-        context.fillStyle = 'white';
-        context.textAlign = 'left';
-        context.fillText(`Product: ${productName}`, 10, overlayCanvas.height - 70);
-        context.fillText(`Name: ${farmerName}`, 10, overlayCanvas.height - 50);
-        context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, overlayCanvas.height - 30);
-        context.fillText(`Timestamp: ${timestamp}`, 10, overlayCanvas.height - 10); // Timestamp at the bottom
-
-        // Draw the logo at the top-left corner with smaller caption
-        const logoWidth = 50;  // Logo width
-        const logoHeight = 50;  // Logo height
-        const logoX = 10;
-        const logoY = 10;
-        context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
-
-        // Draw caption "VHUMI.IN" under the logo
-        context.font = '10px Arial';  // Smaller font for caption
-        context.textAlign = 'center';
-        context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
-
-        requestAnimationFrame(drawOverlay);
-    }
-    drawOverlay();
-});
 
 stopRecordButton.addEventListener('click', function () {
     mediaRecorder.stop();
