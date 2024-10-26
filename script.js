@@ -1,7 +1,6 @@
 const openCameraButton = document.getElementById('open-camera');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-const overlay = document.getElementById('overlay');
 const takePhotoButton = document.getElementById('take-photo');
 const startRecordButton = document.getElementById('start-record');
 const stopRecordButton = document.getElementById('stop-record');
@@ -12,10 +11,7 @@ const farmerNameInput = document.getElementById('farmer-name');
 const logoInput = document.getElementById('logo-upload');
 let mediaRecorder;
 let recordedChunks = [];
-let isRecording = false;
 let logoImage = null;
-let canvasStream;
-let overlayCanvas = document.createElement('canvas');
 
 // Fixed logo image
 const fixedLogoImage = new Image();
@@ -45,25 +41,19 @@ async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' },
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                sampleRate: 44100
-            }
+            audio: true
         });
 
         video.srcObject = stream;
-        video.muted = true;
         video.play();
 
-        // Additional setup for mediaRecorder
-        canvasStream = overlayCanvas.captureStream(30);
+        // Setup media recorder
         const combinedStream = new MediaStream([
-            ...canvasStream.getVideoTracks(),
-            ...stream.getAudioTracks()
+            stream.getVideoTracks()[0],
+            stream.getAudioTracks()[0]
         ]);
 
-        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/mp4' });
+        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
 
         mediaRecorder.ondataavailable = function(event) {
             if (event.data.size > 0) {
@@ -86,33 +76,35 @@ function downloadData(url, fileName) {
 }
 
 function saveVideo() {
-    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
     const videoElement = document.createElement('video');
     videoElement.controls = true;
     videoElement.src = url;
     document.getElementById('result').appendChild(videoElement);
-    downloadData(url, 'video_recording.mp4');
+    downloadData(url, 'video_recording.webm');
     recordedChunks = [];
 }
 
 takePhotoButton.addEventListener('click', async function () {
     const context = canvas.getContext('2d');
-    const zoom = parseFloat(zoomRange.value); // Get current zoom level
+    const zoom = parseFloat(zoomRange.value);
 
+    // Set canvas dimensions
     canvas.width = video.videoWidth * zoom;
     canvas.height = video.videoHeight * zoom;
 
-    // Scale and draw the video on the canvas according to the zoom level
+    // Draw video to canvas
     context.scale(zoom, zoom);
     context.drawImage(video, 0, 0);
 
+    // Gather data for footer
     const productName = productNameInput.value || "Product";
     const farmerName = farmerNameInput.value || "Name";
-    const position = await getLocation(); // Make sure this resolves properly
+    const position = await getLocation();
     const timestamp = new Date().toLocaleString();
 
-    // Draw text in the footer area with updated position based on zoom
+    // Draw footer information
     context.font = '16px Arial';
     context.fillStyle = 'white';
     context.textAlign = 'left';
@@ -121,19 +113,19 @@ takePhotoButton.addEventListener('click', async function () {
     context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10 / zoom, canvas.height - 50 / zoom);
     context.fillText(`Timestamp: ${timestamp}`, 10 / zoom, canvas.height - 30 / zoom);
 
-    // Draw the uploaded logo or fixed logo in the footer
+    // Draw logo
     const footerLogoWidth = 60 / zoom;
     const footerLogoHeight = 30 / zoom;
     const footerLogoX = 10 / zoom;
     const footerLogoY = canvas.height - 120 / zoom;
 
-    // Ensure logo image is fully loaded before drawing
     const logoToDraw = logoImage && logoImage.complete ? logoImage : fixedLogoImage;
     context.drawImage(logoToDraw, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
 
-    // Reset the canvas scaling to avoid affecting further draws
+    // Reset canvas transform
     context.setTransform(1, 0, 0, 1, 0, 0);
 
+    // Convert canvas to image and append to result
     const dataUrl = canvas.toDataURL('image/png');
     const img = document.createElement('img');
     img.src = dataUrl;
@@ -144,10 +136,6 @@ takePhotoButton.addEventListener('click', async function () {
 
 stopRecordButton.addEventListener('click', function () {
     mediaRecorder.stop();
-    isRecording = false;
-    startRecordButton.style.display = 'inline';
-    stopRecordButton.style.display = 'none';
-    pauseRecordButton.style.display = 'none';
 });
 
 pauseRecordButton.addEventListener('click', function () {
