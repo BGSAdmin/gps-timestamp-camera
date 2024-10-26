@@ -106,24 +106,24 @@ takePhotoButton.addEventListener('click', async function () {
     const position = await getLocation();
     const timestamp = new Date().toLocaleString();
 
-    // Draw all footer text including timestamp
-    context.font = '20px Arial';
+    // Draw all footer text in one line at the bottom
+    context.font = '16px Arial';  // Smaller font size
     context.fillStyle = 'white';
+    context.textAlign = 'left';
     const footerText = `Product: ${productName} | Name: ${farmerName} | Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)} | Timestamp: ${timestamp}`;
-    context.fillText(footerText, 10, canvas.height - 20); // Positioned at the footer
+    context.fillText(footerText, 10, canvas.height - 10); // Positioned at the footer
 
-    // Draw the fixed logo
-    const logoWidth = 80;
-    const logoHeight = 80;
+    // Draw the logo with smaller dimensions
+    const logoWidth = 50;  // Smaller logo width
+    const logoHeight = 50;  // Smaller logo height
     const logoX = canvas.width - logoWidth - 10;
     const logoY = 10;
     context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
 
-    // Draw caption "VHUMI.IN" under the logo
-    context.font = '18px Arial';
-    context.fillStyle = 'white';
+    // Draw the caption "VHUMI.IN" under the logo
+    context.font = '12px Arial';  // Smaller font for caption
     context.textAlign = 'center';
-    context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 20);
+    context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
 
     const dataUrl = canvas.toDataURL('image/png');
     const img = document.createElement('img');
@@ -155,29 +155,30 @@ startRecordButton.addEventListener('click', async function () {
         const position = await getLocation();
         const timestamp = new Date().toLocaleString();
 
-        // Draw all footer text including timestamp
-        context.font = '20px Arial';
+        // Draw all footer text in one line at the bottom
+        context.font = '16px Arial';  // Smaller font size
         context.fillStyle = 'white';
+        context.textAlign = 'left';
         const footerText = `Product: ${productName} | Name: ${farmerName} | Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)} | Timestamp: ${timestamp}`;
-        context.fillText(footerText, 10, overlayCanvas.height - 20);
+        context.fillText(footerText, 10, overlayCanvas.height - 10);
 
-        // Draw the fixed logo
-        const logoWidth = 80;
-        const logoHeight = 80;
+        // Draw the logo with smaller dimensions
+        const logoWidth = 50;  // Smaller logo width
+        const logoHeight = 50;  // Smaller logo height
         const logoX = overlayCanvas.width - logoWidth - 10;
         const logoY = 10;
         context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
 
-        // Draw caption "VHUMI.IN" under the logo
-        context.font = '18px Arial';
-        context.fillStyle = 'white';
+        // Draw the caption "VHUMI.IN" under the logo
+        context.font = '12px Arial';  // Smaller font for caption
         context.textAlign = 'center';
-        context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 20);
+        context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
 
         requestAnimationFrame(drawOverlay);
     }
     drawOverlay();
 });
+
 
 
 stopRecordButton.addEventListener('click', function () {
