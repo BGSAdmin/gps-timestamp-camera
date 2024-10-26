@@ -1,7 +1,7 @@
 const openCameraButton = document.getElementById('open-camera');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-const overlayCanvas = document.createElement('canvas');
+const overlay = document.getElementById('overlay');
 const takePhotoButton = document.getElementById('take-photo');
 const startRecordButton = document.getElementById('start-record');
 const stopRecordButton = document.getElementById('stop-record');
@@ -10,14 +10,14 @@ const zoomRange = document.getElementById('zoom-range');
 const productNameInput = document.getElementById('product-name');
 const farmerNameInput = document.getElementById('farmer-name');
 const logoInput = document.getElementById('logo-upload');
-const cameraSelect = document.getElementById('camera-select');
 
 let mediaRecorder;
 let recordedChunks = [];
 let isRecording = false;
 let logoImage = null;
+let canvasStream;
+let overlayCanvas = document.createElement('canvas');
 
-// Load logo image on file change
 logoInput.addEventListener('change', function (event) {
     const file = event.target.files[0];
     if (file) {
@@ -30,18 +30,22 @@ logoInput.addEventListener('change', function (event) {
     }
 });
 
-// Open camera when camera selection changes
-cameraSelect.addEventListener('change', startCamera);
+openCameraButton.addEventListener('click', async function() {
+    console.log("Open Camera button clicked");
+    await startCamera();
+    takePhotoButton.style.display = 'inline-block';
+    startRecordButton.style.display = 'inline-block';
+    zoomRange.style.display = 'inline-block';
+});
 
-// Open camera on button click
-openCameraButton.addEventListener('click', startCamera);
-
-// Start the camera function
 async function startCamera() {
     try {
+        console.log("Trying to access the rear camera...");
+
+        // Set constraints to open only the rear camera
         const constraints = {
             video: {
-                facingMode: cameraSelect.value === 'any' ? undefined : { exact: cameraSelect.value }
+                facingMode: { exact: "environment" }  // Use rear camera only
             },
             audio: {
                 echoCancellation: true,
@@ -51,29 +55,40 @@ async function startCamera() {
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("Rear camera accessed successfully");
+        
         video.srcObject = stream;
-        video.muted = true;
+        video.play();
 
-        // Set up media recorder with combined video and audio tracks
-        const canvasStream = overlayCanvas.captureStream(30);
+        canvasStream = overlayCanvas.captureStream(30);
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...stream.getAudioTracks()
         ]);
 
         mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/mp4' });
+
         mediaRecorder.ondataavailable = function(event) {
-            if (event.data.size > 0) recordedChunks.push(event.data);
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
         };
+
         mediaRecorder.onstop = saveVideo;
 
     } catch (err) {
-        console.error("Error accessing the camera: ", err);
-        alert("Could not access the camera. Please check your permissions and try again.");
+        console.error("Error accessing the rear camera: ", err);
+        alert("Could not access the rear camera. Please check your permissions and try again.");
     }
 }
 
-// Function to save the recorded video
+function downloadData(url, fileName) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+}
+
 function saveVideo() {
     const blob = new Blob(recordedChunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
@@ -85,15 +100,6 @@ function saveVideo() {
     recordedChunks = [];
 }
 
-// Function to download captured data
-function downloadData(url, fileName) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.click();
-}
-
-// Capture image with GPS and timestamp
 takePhotoButton.addEventListener('click', async function () {
     const context = canvas.getContext('2d');
     canvas.width = video.videoWidth;
@@ -102,15 +108,15 @@ takePhotoButton.addEventListener('click', async function () {
 
     const productName = productNameInput.value || "Product Name";
     const farmerName = farmerNameInput.value || "Farmer Name";
+
     const position = await getLocation();
     const timestamp = new Date().toLocaleString();
-
     context.font = '20px Arial';
     context.fillStyle = 'white';
     context.fillText(`Product: ${productName}`, 10, 30);
     context.fillText(`Name: ${farmerName}`, 10, 60);
     context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
-    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 20); // Timestamp at the footer
+    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 20); // Move timestamp to the footer
 
     if (logoImage) {
         const logoWidth = 100;
@@ -122,16 +128,21 @@ takePhotoButton.addEventListener('click', async function () {
     const img = document.createElement('img');
     img.src = dataUrl;
     document.getElementById('result').appendChild(img);
+
     downloadData(dataUrl, 'captured_image.png');
 });
 
-// Video recording functions
-startRecordButton.addEventListener('click', function () {
+startRecordButton.addEventListener('click', async function () {
+    const context = overlayCanvas.getContext('2d');
+    overlayCanvas.width = video.videoWidth;
+    overlayCanvas.height = video.videoHeight;
+
     mediaRecorder.start();
     isRecording = true;
     startRecordButton.style.display = 'none';
     stopRecordButton.style.display = 'inline';
     pauseRecordButton.style.display = 'inline';
+
     drawOverlay();
 });
 
@@ -156,15 +167,16 @@ pauseRecordButton.addEventListener('click', function () {
 
 function drawOverlay() {
     if (!isRecording) return;
+
     const context = overlayCanvas.getContext('2d');
     context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     context.font = '20px Arial';
     context.fillStyle = 'red';
     context.fillText('Recording...', 10, 30);
+
     requestAnimationFrame(drawOverlay);
 }
 
-// Function to get GPS location
 async function getLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
