@@ -30,13 +30,20 @@
             z-index: 10;
         }
 
-        /* Camera and Controls */
-        video {
-            width: 100%;
-            max-width: 500px;
-            height: auto;
-            border: 2px solid black;
-        }
+        #container {
+    width: 400px; /* Fixed width for portrait rectangle */
+    height: 600px; /* Fixed height for portrait rectangle */
+    overflow: hidden;
+    border: 2px solid #333;
+    border-radius: 10px;
+}
+
+#video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Keeps video content filling container without stretching */
+    transform-origin: center center; /* Ensures the zoom effect is centered */
+}
 
         canvas {
             display: none;
@@ -79,10 +86,12 @@
 </div>
 
 
-    <div style="position: relative;">
-        <video id="video" autoplay playsinline muted></video> 
-        <canvas id="overlay"></canvas>
-    </div>
+   <div id="container" style="position: relative; width: 400px; height: 600px;">
+    <video id="video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <canvas id="overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+</div>
+
     <canvas id="canvas"></canvas>
 
     <div id="controls">
