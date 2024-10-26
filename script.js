@@ -1,6 +1,7 @@
 const openCameraButton = document.getElementById('open-camera');
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
+const overlay = document.getElementById('overlay');
 const takePhotoButton = document.getElementById('take-photo');
 const startRecordButton = document.getElementById('start-record');
 const stopRecordButton = document.getElementById('stop-record');
@@ -11,7 +12,10 @@ const farmerNameInput = document.getElementById('farmer-name');
 const logoInput = document.getElementById('logo-upload');
 let mediaRecorder;
 let recordedChunks = [];
+let isRecording = false;
 let logoImage = null;
+let canvasStream;
+let overlayCanvas = document.createElement('canvas');
 
 // Fixed logo image
 const fixedLogoImage = new Image();
@@ -23,6 +27,9 @@ logoInput.addEventListener('change', function (event) {
         const reader = new FileReader();
         reader.onload = function (e) {
             logoImage = new Image();
+            logoImage.onload = () => {
+                console.log("Uploaded logo image loaded successfully.");
+            };
             logoImage.src = e.target.result;
         };
         reader.readAsDataURL(file);
@@ -41,19 +48,24 @@ async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' },
-            audio: true
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 44100
+            }
         });
 
         video.srcObject = stream;
-        video.play();
+        video.muted = true;
 
-        // Setup media recorder
+        // Additional setup for mediaRecorder
+        canvasStream = overlayCanvas.captureStream(30);
         const combinedStream = new MediaStream([
-            stream.getVideoTracks()[0],
-            stream.getAudioTracks()[0]
+            ...canvasStream.getVideoTracks(),
+            ...stream.getAudioTracks()
         ]);
 
-        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
+        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/mp4' });
 
         mediaRecorder.ondataavailable = function(event) {
             if (event.data.size > 0) {
@@ -76,56 +88,60 @@ function downloadData(url, fileName) {
 }
 
 function saveVideo() {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     const videoElement = document.createElement('video');
     videoElement.controls = true;
     videoElement.src = url;
     document.getElementById('result').appendChild(videoElement);
-    downloadData(url, 'video_recording.webm');
+    downloadData(url, 'video_recording.mp4');
     recordedChunks = [];
 }
 
 takePhotoButton.addEventListener('click', async function () {
     const context = canvas.getContext('2d');
-    const zoom = parseFloat(zoomRange.value);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Set canvas dimensions
-    canvas.width = video.videoWidth * zoom;
-    canvas.height = video.videoHeight * zoom;
-
-    // Draw video to canvas
-    context.scale(zoom, zoom);
-    context.drawImage(video, 0, 0);
-
-    // Gather data for footer
     const productName = productNameInput.value || "Product";
     const farmerName = farmerNameInput.value || "Name";
     const position = await getLocation();
     const timestamp = new Date().toLocaleString();
 
-    // Draw footer information
+    // Draw each footer line separately
     context.font = '16px Arial';
     context.fillStyle = 'white';
     context.textAlign = 'left';
-    context.fillText(`Product: ${productName}`, 10 / zoom, canvas.height - 90 / zoom);
-    context.fillText(`Name: ${farmerName}`, 10 / zoom, canvas.height - 70 / zoom);
-    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10 / zoom, canvas.height - 50 / zoom);
-    context.fillText(`Timestamp: ${timestamp}`, 10 / zoom, canvas.height - 30 / zoom);
+    context.fillText(`Product: ${productName}`, 10, canvas.height - 90);
+    context.fillText(`Name: ${farmerName}`, 10, canvas.height - 70);
+    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, canvas.height - 50);
+    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 30);
 
-    // Draw logo
-    const footerLogoWidth = 60 / zoom;
-    const footerLogoHeight = 30 / zoom;
-    const footerLogoX = 10 / zoom;
-    const footerLogoY = canvas.height - 120 / zoom;
+    // Draw the uploaded logo or fixed logo in the footer
+    const footerLogoWidth = 60;
+    const footerLogoHeight = 30;
+    const footerLogoX = 10;
+    const footerLogoY = canvas.height - 120;
 
-    const logoToDraw = logoImage && logoImage.complete ? logoImage : fixedLogoImage;
-    context.drawImage(logoToDraw, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+    if (logoImage && logoImage.complete) {
+        context.drawImage(logoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+    } else {
+        context.drawImage(fixedLogoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+    }
 
-    // Reset canvas transform
-    context.setTransform(1, 0, 0, 1, 0, 0);
+    // Draw the fixed logo at the top-left corner
+    const logoWidth = 50;
+    const logoHeight = 50;
+    const logoX = 10;
+    const logoY = 10;
+    context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
 
-    // Convert canvas to image and append to result
+    // Draw caption "VHUMI.IN" under the logo
+    context.font = '10px Arial';
+    context.textAlign = 'center';
+    context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
+
     const dataUrl = canvas.toDataURL('image/png');
     const img = document.createElement('img');
     img.src = dataUrl;
@@ -136,6 +152,10 @@ takePhotoButton.addEventListener('click', async function () {
 
 stopRecordButton.addEventListener('click', function () {
     mediaRecorder.stop();
+    isRecording = false;
+    startRecordButton.style.display = 'inline';
+    stopRecordButton.style.display = 'none';
+    pauseRecordButton.style.display = 'none';
 });
 
 pauseRecordButton.addEventListener('click', function () {
@@ -150,7 +170,7 @@ pauseRecordButton.addEventListener('click', function () {
 
 zoomRange.addEventListener('input', function () {
     const zoom = zoomRange.value;
-    video.style.transform = `scale(${zoom})`;
+    video.style.transform = scale(${zoom});
     video.style.transformOrigin = 'center center';
 });
 
