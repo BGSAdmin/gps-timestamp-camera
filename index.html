@@ -13,21 +13,8 @@
             align-items: center;
             justify-content: flex-start;
             margin: 0;
-            padding-top: 80px;
+            padding-top: 20px;
             background-color: #f0f0f0;
-        }
-
-        /* Fixed Header for Logo and Caption */
-        #header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            font-size: 24px;
-            z-index: 10;
         }
 
         /* Video/Canvas Container for Portrait Mode */
@@ -47,18 +34,13 @@
             transform-origin: center center; /* Ensures the zoom effect is centered */
         }
 
-        /* Hide extra canvas */
-        canvas {
-            display: none;
-        }
-
         /* Styling for Input Container */
         #input-container {
             display: flex;
             flex-direction: column;
             gap: 10px;
             width: 100%;
-            max-width: 300px; /* Limit max-width to keep input fields smaller */
+            max-width: 300px;
             margin-bottom: 20px;
         }
 
@@ -101,12 +83,21 @@
             max-width: 500px;
             margin-top: 10px;
         }
+
+        /* Footer text in captured image */
+        .footer-text {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            font-size: 14px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
-    <div id="header">
-        GPS Timestamp Camera & Video
-    </div>
 
     <div id="input-container">
         <label for="product-name">Product:</label>
@@ -136,6 +127,71 @@
 
     <div id="result"></div>
 
-    <script src="script.js"></script>
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const overlay = document.getElementById("overlay");
+        const result = document.getElementById("result");
+        const productNameInput = document.getElementById("product-name");
+        const farmerNameInput = document.getElementById("farmer-name");
+        const logoUpload = document.getElementById("logo-upload");
+
+        let uploadedLogo = null;
+
+        // Access the user's camera
+        document.getElementById("open-camera").addEventListener("click", async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            video.srcObject = stream;
+        });
+
+        // Capture image
+        document.getElementById("take-photo").addEventListener("click", () => {
+            const context = canvas.getContext("2d");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Overlay the logo
+            const overlayContext = overlay.getContext("2d");
+            overlayContext.clearRect(0, 0, overlay.width, overlay.height);
+
+            const logoImage = new Image();
+            if (uploadedLogo) {
+                logoImage.src = uploadedLogo;
+                overlayContext.drawImage(logoImage, canvas.width - 80, canvas.height - 80, 60, 60); // Position user-uploaded logo at bottom right
+            }
+
+            // Add footer text
+            const footerText = `${productNameInput.value} | ${farmerNameInput.value} | Lat, Long | ${new Date().toLocaleString()}`;
+            overlayContext.font = "16px Arial";
+            overlayContext.fillStyle = "white";
+            overlayContext.fillText(footerText, 10, canvas.height - 20);
+
+            // Combine canvas and overlay into one image
+            const finalImage = document.createElement("canvas");
+            finalImage.width = canvas.width;
+            finalImage.height = canvas.height;
+            const finalContext = finalImage.getContext("2d");
+            finalContext.drawImage(canvas, 0, 0);
+            finalContext.drawImage(overlay, 0, 0);
+
+            const img = new Image();
+            img.src = finalImage.toDataURL("image/png");
+            result.innerHTML = "";
+            result.appendChild(img);
+        });
+
+        // Handle file upload
+        logoUpload.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    uploadedLogo = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 </html>
