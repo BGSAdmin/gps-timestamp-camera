@@ -30,23 +30,48 @@
             z-index: 10;
         }
 
+        /* Video/Canvas Container for Portrait Mode */
         #container {
-    width: 400px; /* Fixed width for portrait rectangle */
-    height: 500px; /* Fixed height for portrait rectangle */
-    overflow: hidden;
-    border: 2px solid #333;
-    border-radius: 10px;
-}
+            width: 400px; /* Fixed width for portrait rectangle */
+            height: 500px; /* Fixed height for portrait rectangle */
+            overflow: hidden;
+            border: 2px solid #333;
+            border-radius: 10px;
+            position: relative;
+        }
 
-#video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Keeps video content filling container without stretching */
-    transform-origin: center center; /* Ensures the zoom effect is centered */
-}
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: center center; /* Ensures the zoom effect is centered */
+        }
 
+        /* Hide extra canvas */
         canvas {
             display: none;
+        }
+
+        /* Styling for Input Container */
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            max-width: 300px; /* Limit max-width to keep input fields smaller */
+            margin-bottom: 20px;
+        }
+
+        #input-container label {
+            font-weight: bold;
+        }
+
+        #input-container input[type="text"],
+        #input-container input[type="file"] {
+            padding: 8px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* Controls Styling */
@@ -59,27 +84,6 @@
             margin-top: 10px;
             gap: 10px;
         }
-        #input-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px; /* Add space between each item */
-    margin-bottom: 20px; /* Add space below the container */
-    width: 100%; /* Adjust width as needed */
-}
-
-#input-container label {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-#input-container input[type="text"],
-#input-container input[type="file"] {
-    padding: 8px;
-    font-size: 14px;
-    width: 100%;
-    box-sizing: border-box; /* Ensures padding doesn’t affect width */
-}
-
 
         button {
             padding: 10px 20px;
@@ -100,26 +104,26 @@
     </style>
 </head>
 <body>
-   <div id="input-container">
-    <label for="product-name">Product:</label>
-    <input type="text" id="product-name" placeholder="Enter product name">
+    <div id="header">
+        GPS Timestamp Camera & Video
+    </div>
 
-    <label for="farmer-name">Name:</label>
-    <input type="text" id="farmer-name" placeholder="Enter name">
+    <div id="input-container">
+        <label for="product-name">Product:</label>
+        <input type="text" id="product-name" placeholder="Enter product name">
 
-    <label for="logo-upload">Upload Logo:</label>
-    <input type="file" id="logo-upload" accept="image/*">
-</div>
+        <label for="farmer-name">Name:</label>
+        <input type="text" id="farmer-name" placeholder="Enter name">
 
+        <label for="logo-upload">Upload Logo:</label>
+        <input type="file" id="logo-upload" accept="image/*">
+    </div>
 
-
-   <div id="container" style="position: relative; width: 400px; height: 600px;">
-    <video id="video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-    <canvas id="canvas" style="display: none;"></canvas>
-    <canvas id="overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
-</div>
-
-    <canvas id="canvas"></canvas>
+    <div id="container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <canvas id="overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+    </div>
 
     <div id="controls">
         <button id="open-camera">Open Camera</button>
