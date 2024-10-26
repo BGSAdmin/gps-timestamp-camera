@@ -32,7 +32,7 @@
 
         #container {
     width: 400px; /* Fixed width for portrait rectangle */
-    height: 600px; /* Fixed height for portrait rectangle */
+    height: 500px; /* Fixed height for portrait rectangle */
     overflow: hidden;
     border: 2px solid #333;
     border-radius: 10px;
@@ -59,6 +59,27 @@
             margin-top: 10px;
             gap: 10px;
         }
+        #input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Add space between each item */
+    margin-bottom: 20px; /* Add space below the container */
+    width: 100%; /* Adjust width as needed */
+}
+
+#input-container label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#input-container input[type="text"],
+#input-container input[type="file"] {
+    padding: 8px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding doesn’t affect width */
+}
+
 
         button {
             padding: 10px 20px;
@@ -79,11 +100,17 @@
     </style>
 </head>
 <body>
-    <div class="info">
-    <label>Product: <input type="text" id="product-name" placeholder="Enter Product Name"></label>
-    <label>Name: <input type="text" id="farmer-name" placeholder="Enter Farmer Name"></label>
-    <label>Upload Logo: <input type="file" id="logo-upload" accept="image/*"></label>
+   <div id="input-container">
+    <label for="product-name">Product:</label>
+    <input type="text" id="product-name" placeholder="Enter product name">
+
+    <label for="farmer-name">Name:</label>
+    <input type="text" id="farmer-name" placeholder="Enter name">
+
+    <label for="logo-upload">Upload Logo:</label>
+    <input type="file" id="logo-upload" accept="image/*">
 </div>
+
 
 
    <div id="container" style="position: relative; width: 400px; height: 600px;">
