@@ -101,19 +101,16 @@ takePhotoButton.addEventListener('click', async function () {
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const productName = productNameInput.value || "Product Name";
-    const farmerName = farmerNameInput.value || "Farmer Name";
-
+    const productName = productNameInput.value || "Product";
+    const farmerName = farmerNameInput.value || "Name";
     const position = await getLocation();
     const timestamp = new Date().toLocaleString();
+
+    // Draw all footer text including timestamp
     context.font = '20px Arial';
     context.fillStyle = 'white';
-    context.fillText(`Product: ${productName}`, 10, 30);
-    context.fillText(`Farmer: ${farmerName}`, 10, 60);
-    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
-    
-    // Draw timestamp in the footer
-    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 20); // Adjust position to footer
+    const footerText = `Product: ${productName} | Name: ${farmerName} | Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)} | Timestamp: ${timestamp}`;
+    context.fillText(footerText, 10, canvas.height - 20); // Positioned at the footer
 
     // Draw the fixed logo
     const logoWidth = 80;
@@ -147,26 +144,22 @@ startRecordButton.addEventListener('click', async function () {
     stopRecordButton.style.display = 'inline';
     pauseRecordButton.style.display = 'inline';
 
-    function drawOverlay() {
+    async function drawOverlay() {
         if (!isRecording) return;
 
         context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-        
         context.drawImage(video, 0, 0, overlayCanvas.width, overlayCanvas.height);
 
         const productName = productNameInput.value || "Product";
         const farmerName = farmerNameInput.value || "Name";
+        const position = await getLocation();
+        const timestamp = new Date().toLocaleString();
 
+        // Draw all footer text including timestamp
         context.font = '20px Arial';
         context.fillStyle = 'white';
-        const position = await getLocation(); // Update this to get position correctly
-        const timestamp = new Date().toLocaleString();
-        context.fillText(`Product: ${productName}`, 10, 30);
-        context.fillText(`Farmer: ${farmerName}`, 10, 60);
-        context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
-        
-        // Draw timestamp in the footer
-        context.fillText(`Timestamp: ${timestamp}`, 10, overlayCanvas.height - 20); // Adjust position to footer
+        const footerText = `Product: ${productName} | Name: ${farmerName} | Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)} | Timestamp: ${timestamp}`;
+        context.fillText(footerText, 10, overlayCanvas.height - 20);
 
         // Draw the fixed logo
         const logoWidth = 80;
@@ -185,6 +178,7 @@ startRecordButton.addEventListener('click', async function () {
     }
     drawOverlay();
 });
+
 
 stopRecordButton.addEventListener('click', function () {
     mediaRecorder.stop();
