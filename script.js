@@ -17,6 +17,10 @@ let logoImage = null;
 let canvasStream;
 let overlayCanvas = document.createElement('canvas');
 
+// Fixed logo image
+const fixedLogoImage = new Image();
+fixedLogoImage.src = './logo.png'; // Adjust path as needed
+
 logoInput.addEventListener('change', function (event) {
     const file = event.target.files[0];
     if (file) {
@@ -30,20 +34,17 @@ logoInput.addEventListener('change', function (event) {
 });
 
 openCameraButton.addEventListener('click', async function() {
-    console.log("Open Camera button clicked"); // Add this line to check if it's responding
+    console.log("Open Camera button clicked");
     await startCamera();
     takePhotoButton.style.display = 'inline-block';
     startRecordButton.style.display = 'inline-block';
     zoomRange.style.display = 'inline-block';
-
 });
-
-
 
 async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' }, // This is less strict and more likely to work
+            video: { facingMode: 'environment' },
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
@@ -61,7 +62,7 @@ async function startCamera() {
             ...stream.getAudioTracks()
         ]);
 
-        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
+        mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/mp4' });
 
         mediaRecorder.ondataavailable = function(event) {
             if (event.data.size > 0) {
@@ -84,13 +85,13 @@ function downloadData(url, fileName) {
 }
 
 function saveVideo() {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     const videoElement = document.createElement('video');
     videoElement.controls = true;
     videoElement.src = url;
     document.getElementById('result').appendChild(videoElement);
-    downloadData(url, 'video_recording.webm');
+    downloadData(url, 'video_recording.mp4');
     recordedChunks = [];
 }
 
@@ -110,13 +111,22 @@ takePhotoButton.addEventListener('click', async function () {
     context.fillText(`Product: ${productName}`, 10, 30);
     context.fillText(`Farmer: ${farmerName}`, 10, 60);
     context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
-    context.fillText(`Timestamp: ${timestamp}`, 10, 120);
+    
+    // Draw timestamp in the footer
+    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 20); // Adjust position to footer
 
-    if (logoImage) {
-        const logoWidth = 100;
-        const logoHeight = 100;
-        context.drawImage(logoImage, canvas.width - logoWidth - 10, canvas.height - logoHeight - 10, logoWidth, logoHeight);
-    }
+    // Draw the fixed logo
+    const logoWidth = 80;
+    const logoHeight = 80;
+    const logoX = canvas.width - logoWidth - 10;
+    const logoY = 10;
+    context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
+
+    // Draw caption "VHUMI.IN" under the logo
+    context.font = '18px Arial';
+    context.fillStyle = 'white';
+    context.textAlign = 'center';
+    context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 20);
 
     const dataUrl = canvas.toDataURL('image/png');
     const img = document.createElement('img');
@@ -149,20 +159,27 @@ startRecordButton.addEventListener('click', async function () {
 
         context.font = '20px Arial';
         context.fillStyle = 'white';
-        const position = {
-            coords: { latitude: 12.9716, longitude: 77.5946 }
-        };
+        const position = await getLocation(); // Update this to get position correctly
         const timestamp = new Date().toLocaleString();
         context.fillText(`Product: ${productName}`, 10, 30);
         context.fillText(`Farmer: ${farmerName}`, 10, 60);
         context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, 90);
-        context.fillText(`Timestamp: ${timestamp}`, 10, 120);
+        
+        // Draw timestamp in the footer
+        context.fillText(`Timestamp: ${timestamp}`, 10, overlayCanvas.height - 20); // Adjust position to footer
 
-        if (logoImage) {
-            const logoWidth = 100;
-            const logoHeight = 100;
-            context.drawImage(logoImage, overlayCanvas.width - logoWidth - 10, overlayCanvas.height - logoHeight - 10, logoWidth, logoHeight);
-        }
+        // Draw the fixed logo
+        const logoWidth = 80;
+        const logoHeight = 80;
+        const logoX = overlayCanvas.width - logoWidth - 10;
+        const logoY = 10;
+        context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
+
+        // Draw caption "VHUMI.IN" under the logo
+        context.font = '18px Arial';
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 20);
 
         requestAnimationFrame(drawOverlay);
     }
