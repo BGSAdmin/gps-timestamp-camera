@@ -106,23 +106,24 @@ takePhotoButton.addEventListener('click', async function () {
     const position = await getLocation();
     const timestamp = new Date().toLocaleString();
 
-    // Draw all footer text (Product, Name, Lat/Lon, Timestamp) at the bottom
-    context.font = '16px Arial';  // Smaller font size for footer
+    // Draw each footer line separately
+    context.font = '16px Arial';  // Font size for footer
     context.fillStyle = 'white';
     context.textAlign = 'left';
-    const footerText = `Product: ${productName} | Name: ${farmerName} | Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)} | Timestamp: ${timestamp}`;
-    context.fillText(footerText, 10, canvas.height - 10); // Positioned at the footer
+    context.fillText(`Product: ${productName}`, 10, canvas.height - 70);
+    context.fillText(`Name: ${farmerName}`, 10, canvas.height - 50);
+    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, canvas.height - 30);
+    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 10); // Timestamp at the bottom
 
-    // Draw the logo at the top-right corner with a smaller caption
-    const logoWidth = 50;  // Smaller logo width
-    const logoHeight = 50;  // Smaller logo height
-    const logoX = canvas.width - logoWidth - 10;
+    // Draw the logo at the top-left corner with smaller caption
+    const logoWidth = 50;  // Logo width
+    const logoHeight = 50;  // Logo height
+    const logoX = 10;
     const logoY = 10;
     context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
 
-    // Draw the caption "VHUMI.IN" under the logo
+    // Draw caption "VHUMI.IN" under the logo
     context.font = '10px Arial';  // Smaller font for caption
-    context.fillStyle = 'white';
     context.textAlign = 'center';
     context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
 
@@ -156,23 +157,24 @@ startRecordButton.addEventListener('click', async function () {
         const position = await getLocation();
         const timestamp = new Date().toLocaleString();
 
-        // Draw all footer text (Product, Name, Lat/Lon, Timestamp) at the bottom
-        context.font = '16px Arial';  // Smaller font size for footer
+        // Draw each footer line separately
+        context.font = '16px Arial';  // Font size for footer
         context.fillStyle = 'white';
         context.textAlign = 'left';
-        const footerText = `Product: ${productName} | Name: ${farmerName} | Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)} | Timestamp: ${timestamp}`;
-        context.fillText(footerText, 10, overlayCanvas.height - 10); // Positioned at the footer
+        context.fillText(`Product: ${productName}`, 10, overlayCanvas.height - 70);
+        context.fillText(`Name: ${farmerName}`, 10, overlayCanvas.height - 50);
+        context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, overlayCanvas.height - 30);
+        context.fillText(`Timestamp: ${timestamp}`, 10, overlayCanvas.height - 10); // Timestamp at the bottom
 
-        // Draw the logo at the top-right corner with a smaller caption
-        const logoWidth = 50;  // Smaller logo width
-        const logoHeight = 50;  // Smaller logo height
-        const logoX = overlayCanvas.width - logoWidth - 10;
+        // Draw the logo at the top-left corner with smaller caption
+        const logoWidth = 50;  // Logo width
+        const logoHeight = 50;  // Logo height
+        const logoX = 10;
         const logoY = 10;
         context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
 
-        // Draw the caption "VHUMI.IN" under the logo
+        // Draw caption "VHUMI.IN" under the logo
         context.font = '10px Arial';  // Smaller font for caption
-        context.fillStyle = 'white';
         context.textAlign = 'center';
         context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
 
@@ -180,9 +182,6 @@ startRecordButton.addEventListener('click', async function () {
     }
     drawOverlay();
 });
-
-
-
 
 stopRecordButton.addEventListener('click', function () {
     mediaRecorder.stop();
