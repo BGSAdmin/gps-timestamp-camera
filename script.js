@@ -54,6 +54,7 @@ async function startCamera() {
 
         video.srcObject = stream;
         video.muted = true;
+        video.play();
 
         // Additional setup for mediaRecorder
         canvasStream = overlayCanvas.captureStream(30);
@@ -108,7 +109,7 @@ takePhotoButton.addEventListener('click', async function () {
 
     const productName = productNameInput.value || "Product";
     const farmerName = farmerNameInput.value || "Name";
-    const position = await getLocation();
+    const position = await getLocation(); // Make sure this resolves properly
     const timestamp = new Date().toLocaleString();
 
     // Draw text in the footer area with updated position based on zoom
@@ -126,12 +127,9 @@ takePhotoButton.addEventListener('click', async function () {
     const footerLogoX = 10 / zoom;
     const footerLogoY = canvas.height - 120 / zoom;
 
-    // Draw the user's uploaded logo or fixed logo
-    if (logoImage && logoImage.complete) {
-        context.drawImage(logoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
-    } else {
-        context.drawImage(fixedLogoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
-    }
+    // Ensure logo image is fully loaded before drawing
+    const logoToDraw = logoImage && logoImage.complete ? logoImage : fixedLogoImage;
+    context.drawImage(logoToDraw, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
 
     // Reset the canvas scaling to avoid affecting further draws
     context.setTransform(1, 0, 0, 1, 0, 0);
