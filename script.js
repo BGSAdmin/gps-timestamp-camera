@@ -126,6 +126,7 @@ takePhotoButton.addEventListener('click', async function () {
     const footerLogoX = 10 / zoom;
     const footerLogoY = canvas.height - 120 / zoom;
 
+    // Draw the user's uploaded logo or fixed logo
     if (logoImage && logoImage.complete) {
         context.drawImage(logoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
     } else {
@@ -142,7 +143,6 @@ takePhotoButton.addEventListener('click', async function () {
 
     downloadData(dataUrl, 'captured_image.png');
 });
-
 
 stopRecordButton.addEventListener('click', function () {
     mediaRecorder.stop();
