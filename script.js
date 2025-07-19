@@ -17,6 +17,22 @@ let isRecording = false;
 let logoImage = null;
 let canvasStream;
 let overlayCanvas = document.createElement('canvas');
+let fixedLogoImage = null;
+
+// Load the fixed logo image
+function loadFixedLogo() {
+    fixedLogoImage = new Image();
+    fixedLogoImage.onload = () => {
+        console.log("Fixed logo image loaded successfully.");
+    };
+    fixedLogoImage.onerror = () => {
+        console.warn("Fixed logo image failed to load, will use fallback.");
+    };
+    fixedLogoImage.src = 'logo.png';
+}
+
+// Load fixed logo on page load
+loadFixedLogo();
 
 // Handle logo upload
 logoInput.addEventListener('change', function (event) {
@@ -62,6 +78,12 @@ async function startCamera() {
         video.srcObject = stream;
         video.play();
 
+        // Wait for video to load metadata to get proper dimensions
+        video.addEventListener('loadedmetadata', () => {
+            overlayCanvas.width = video.videoWidth;
+            overlayCanvas.height = video.videoHeight;
+        });
+
         const videoTrack = stream.getVideoTracks()[0];
         const capabilities = videoTrack.getCapabilities();
 
@@ -79,6 +101,7 @@ async function startCamera() {
             };
         }
 
+        // Setup media recorder for video with overlay
         canvasStream = overlayCanvas.captureStream(30);
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
@@ -130,46 +153,87 @@ takePhotoButton.addEventListener('click', async function () {
 
     const productName = productNameInput.value || "Product";
     const farmerName = farmerNameInput.value || "Name";
-    const position = await getLocation();
     const timestamp = new Date().toLocaleString();
+    
+    try {
+        const position = await getCurrentLocation();
 
-    // Draw footer details
-    context.font = '16px Arial';
-    context.fillStyle = 'white';
-    context.textAlign = 'left';
-    context.fillText(`Product: ${productName}`, 10, canvas.height - 90);
-    context.fillText(`Name: ${farmerName}`, 10, canvas.height - 70);
-    context.fillText(`Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`, 10, canvas.height - 50);
-    context.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - 30);
+        // Draw footer details
+        context.font = '16px Arial';
+        context.fillStyle = 'white';
+        context.strokeStyle = 'black';
+        context.lineWidth = 1;
+        context.textAlign = 'left';
+        
+        const texts = [
+            `Product: ${productName}`,
+            `Name: ${farmerName}`,
+            `Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`,
+            `Timestamp: ${timestamp}`
+        ];
+        
+        texts.forEach((text, index) => {
+            const y = canvas.height - 90 + (index * 20);
+            context.strokeText(text, 10, y);
+            context.fillText(text, 10, y);
+        });
 
-    // Draw the uploaded logo or fixed logo in the footer
-    const footerLogoWidth = 60;
-    const footerLogoHeight = 30;
-    const footerLogoX = 10;
-    const footerLogoY = canvas.height - 120;
+        // Draw the uploaded logo or fixed logo in the footer
+        const footerLogoWidth = 60;
+        const footerLogoHeight = 30;
+        const footerLogoX = 10;
+        const footerLogoY = canvas.height - 120;
 
-    if (logoImage && logoImage.complete) {
-        context.drawImage(logoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
-    } else {
-        context.drawImage(fixedLogoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+        if (logoImage && logoImage.complete) {
+            context.drawImage(logoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+        } else if (fixedLogoImage && fixedLogoImage.complete) {
+            context.drawImage(fixedLogoImage, footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+        } else {
+            // Draw a placeholder rectangle if no logo is available
+            context.fillStyle = 'rgba(76, 175, 80, 0.8)';
+            context.fillRect(footerLogoX, footerLogoY, footerLogoWidth, footerLogoHeight);
+            context.fillStyle = 'white';
+            context.font = '12px Arial';
+            context.textAlign = 'center';
+            context.fillText('LOGO', footerLogoX + footerLogoWidth/2, footerLogoY + footerLogoHeight/2 + 4);
+        }
+
+        // Draw fixed logo and caption at the top-left corner
+        const logoWidth = 50;
+        const logoHeight = 50;
+        const logoX = 10;
+        const logoY = 10;
+        
+        if (fixedLogoImage && fixedLogoImage.complete) {
+            context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
+        } else {
+            // Draw a placeholder rectangle if fixed logo is not available
+            context.fillStyle = 'rgba(76, 175, 80, 0.8)';
+            context.fillRect(logoX, logoY, logoWidth, logoHeight);
+            context.fillStyle = 'white';
+            context.font = '14px Arial';
+            context.textAlign = 'center';
+            context.fillText('LOGO', logoX + logoWidth/2, logoY + logoHeight/2 + 4);
+        }
+        
+        context.font = '10px Arial';
+        context.fillStyle = 'white';
+        context.strokeStyle = 'black';
+        context.textAlign = 'center';
+        context.strokeText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
+        context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        document.getElementById('result').appendChild(img);
+
+        downloadData(dataUrl, 'captured_image.png');
+        
+    } catch (error) {
+        alert('Could not get GPS location: ' + error.message);
+        console.error('Location error:', error);
     }
-
-    // Draw fixed logo and caption at the top-left corner
-    const logoWidth = 50;
-    const logoHeight = 50;
-    const logoX = 10;
-    const logoY = 10;
-    context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
-    context.font = '10px Arial';
-    context.textAlign = 'center';
-    context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
-
-    const dataUrl = canvas.toDataURL('image/png');
-    const img = document.createElement('img');
-    img.src = dataUrl;
-    document.getElementById('result').appendChild(img);
-
-    downloadData(dataUrl, 'captured_image.png');
 });
 
 // Start, stop, and pause recording functions
@@ -202,24 +266,100 @@ pauseRecordButton.addEventListener('click', function () {
 });
 
 // Overlay for recording
-function drawOverlay() {
+async function drawOverlay() {
     if (!isRecording) return;
 
     const context = overlayCanvas.getContext('2d');
     context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    context.font = '20px Arial';
-    context.fillStyle = 'red';
-    context.fillText('Recording...', 10, 30);
+    
+    // Draw the video frame first
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+        context.drawImage(video, 0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
+
+    const productName = productNameInput.value || "Product";
+    const farmerName = farmerNameInput.value || "Name";
+    const timestamp = new Date().toLocaleString();
+    
+    // Try to get current location for real-time GPS
+    try {
+        const position = await getCurrentLocation();
+        
+        // Draw overlay information
+        context.font = '16px Arial';
+        context.fillStyle = 'white';
+        context.strokeStyle = 'black';
+        context.lineWidth = 1;
+        context.textAlign = 'left';
+        
+        const texts = [
+            `Product: ${productName}`,
+            `Name: ${farmerName}`,
+            `Lat: ${position.coords.latitude.toFixed(5)}, Lon: ${position.coords.longitude.toFixed(5)}`,
+            `Timestamp: ${timestamp}`
+        ];
+        
+        const startY = overlayCanvas.height - 90;
+        texts.forEach((text, index) => {
+            const y = startY + (index * 20);
+            context.strokeText(text, 10, y);
+            context.fillText(text, 10, y);
+        });
+        
+        // Draw recording indicator
+        context.font = '20px Arial';
+        context.fillStyle = 'red';
+        context.strokeStyle = 'white';
+        context.strokeText('● REC', 10, 30);
+        context.fillText('● REC', 10, 30);
+        
+        // Draw logos if available
+        const logoWidth = 50;
+        const logoHeight = 50;
+        const logoX = 10;
+        const logoY = 50;
+        
+        if (fixedLogoImage && fixedLogoImage.complete) {
+            context.drawImage(fixedLogoImage, logoX, logoY, logoWidth, logoHeight);
+        } else {
+            // Draw placeholder
+            context.fillStyle = 'rgba(76, 175, 80, 0.8)';
+            context.fillRect(logoX, logoY, logoWidth, logoHeight);
+            context.fillStyle = 'white';
+            context.font = '14px Arial';
+            context.textAlign = 'center';
+            context.fillText('LOGO', logoX + logoWidth/2, logoY + logoHeight/2 + 4);
+        }
+        
+        context.font = '10px Arial';
+        context.fillStyle = 'white';
+        context.strokeStyle = 'black';
+        context.textAlign = 'center';
+        context.strokeText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
+        context.fillText("VHUMI.IN", logoX + logoWidth / 2, logoY + logoHeight + 15);
+        
+    } catch (error) {
+        console.warn("Could not get location for overlay:", error);
+        // Draw basic recording indicator even without GPS
+        context.font = '20px Arial';
+        context.fillStyle = 'red';
+        context.strokeStyle = 'white';
+        context.strokeText('● REC', 10, 30);
+        context.fillText('● REC', 10, 30);
+    }
 
     requestAnimationFrame(drawOverlay);
 }
 
-// Get current location
-async function getLocation() {
+// Helper function to get current location
+function getCurrentLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
             reject('Geolocation is not supported by this browser.');
         }
-        navigator.geolocation.getCurrentPosition(resolve, reject);
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 5000,
+            maximumAge: 30000
+        });
     });
 }
